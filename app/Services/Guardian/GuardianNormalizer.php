@@ -9,6 +9,24 @@ use Illuminate\Support\Arr;
 
 class GuardianNormalizer implements NormalizerInterface
 {
+    /**
+     * Convert a Guardian API item array into an ArticleDTO.
+     *
+     * Maps Guardian fields into an ArticleDTO:
+     * - source: `'The Guardian'`
+     * - author: `fields.byline`
+     * - title: `fields.headline` or falls back to `webTitle`
+     * - description: `null`
+     * - content: `fields.body`
+     * - url: `webUrl`
+     * - urlToImage: `fields.thumbnail`
+     * - publishedAt: parsed `webPublicationDate` as a Carbon instance, or `null` if missing
+     * - category: taken from `$params['category']` if present
+     *
+     * @param array $item The raw Guardian API item payload.
+     * @param array $params Optional parameters; expects an optional `category` key.
+     * @return ArticleDTO The resulting ArticleDTO with mapped values.
+     */
     public function normalize(array $item, array $params = []): ArticleDTO
     {
         return new ArticleDTO(
