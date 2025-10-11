@@ -20,12 +20,24 @@ class FetchArticlesJob implements ShouldQueue
     protected NewsSourceInterface $service;
     protected StoreOrUpdateArticleAction $action;
 
+    /**
+     * Initialize the job with its news source service and article persistence action.
+     *
+     * @param NewsSourceInterface $service The news source service used to fetch articles.
+     * @param StoreOrUpdateArticleAction $action The action responsible for storing or updating fetched articles.
+     */
     public function __construct(NewsSourceInterface $service, StoreOrUpdateArticleAction $action)
     {
         $this->service = $service;
         $this->action = $action;
     }
 
+    /**
+     * Fetches articles from the configured news source and delegates their persistence.
+     *
+     * Any exceptions thrown while fetching or persisting articles are caught and logged
+     * with the service class name and the exception message.
+     */
     public function handle(): void
     {
         try {
