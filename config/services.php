@@ -36,9 +36,16 @@ return [
     ],
     'newsapi' => [
         'key' => env('NEWS_API_KEY'),
+        'url' => env('NEWS_API_URL', 'https://newsapi.org/v2/top-headlines'),
     ],
+
     'guardian' => [
         'key' => env('GUARDIAN_API_KEY'),
+        'url' => env('GUARDIAN_API_URL', 'https://content.guardianapis.com/search'),
+    ],
+    'bbc' => [
+        'key' => env('BBC_API_KEY'),
+        'url' => env('BBC_API_URL', 'http://feeds.bbci.co.uk/news/rss.xml'),
     ],
     
 

@@ -4,33 +4,30 @@ namespace App\Actions;
 
 use App\Models\Article;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
+use App\DTOs\ArticleDTO;
 
 class StoreOrUpdateArticleAction
 {
     /**
-     * @param array|Collection $articles
+     * @param array|Collection<int, ArticleDTO> $articles
      */
     public function execute($articles): void
     {
-        $articles = collect($articles)
-            ->map(function ($article) {
-                return [
-                    'external_id' => $article['external_id'] ?? md5($article['url']),
-                    'title' => $article['title'] ?? '',
-                    'description' => $article['description'] ?? '',
-                    'url' => $article['url'] ?? '',
-                    'source' => $article['source'] ?? '',
-                    'published_at' => $article['published_at'] ?? now(),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-            });
+        $articles = collect($articles)->map(function (ArticleDTO $article) {
+            return array_merge($article->toArray(), [
+                'created_at'   => now(),
+                'updated_at'   => now(),
+            ]);
+        });
+
+        Log::info('Storing or updating articles', ['count' => $articles->count()]);
 
         $articles->chunk(100)->each(function ($chunk) {
             Article::upsert(
                 $chunk->toArray(),
-                ['external_id'],
-                ['title', 'description', 'url', 'source', 'published_at', 'updated_at']
+                ['url'],
+                ['description', 'content', 'url', 'author', 'source', 'url_to_image', 'published_at', 'updated_at']
             );
         });
     }

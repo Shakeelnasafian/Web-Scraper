@@ -2,40 +2,41 @@
 
 namespace App\Jobs;
 
-use Throwable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Support\Facades\Log;
-use App\Contracts\NewsSourceInterface;
+use App\Factories\NewsServiceFactory;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use App\Actions\StoreOrUpdateArticleAction;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 
-
 class FetchArticlesJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected NewsSourceInterface $service;
-    protected StoreOrUpdateArticleAction $action;
+    protected string $serviceName;
+    protected array $params;
 
-    public function __construct(NewsSourceInterface $service, StoreOrUpdateArticleAction $action)
+    public function __construct(string $serviceName, array $params)
     {
-        $this->service = $service;
-        $this->action = $action;
+        $this->serviceName = $serviceName;
+        $this->params = $params;
     }
 
     public function handle(): void
     {
         try {
-            $articles = $this->service->fetchArticles();
+            $service = NewsServiceFactory::make($this->serviceName);
 
-            // delegate all persistence logic to the Action
-            $this->action->execute($articles);
-        } catch (Throwable $e) {
+            Log::info('Fetching articles from service', ['service' => $this->serviceName]);
+
+            $articles = $service->fetchArticles($this->params);
+
+            app(StoreOrUpdateArticleAction::class)->execute($articles);
+        } catch (\Throwable $e) {
             Log::error('Error fetching articles', [
-                'service' => get_class($this->service),
+                'service' => $this->serviceName,
                 'message' => $e->getMessage(),
             ]);
         }

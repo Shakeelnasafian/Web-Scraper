@@ -2,12 +2,13 @@
 
 namespace App\Services;
 
-use App\Contracts\FetcherInterface;
-use App\Contracts\ParserInterface;
-use App\Contracts\NormalizerInterface;
 use App\DTOs\ArticleDTO;
+use App\Contracts\ParserInterface;
+use App\Contracts\FetcherInterface;
+use App\Contracts\NewsSourceInterface;
+use App\Contracts\NormalizerInterface;
 
-abstract class AbstractNewsService
+abstract class AbstractNewsService implements NewsSourceInterface
 {
     public function __construct(
         protected FetcherInterface $fetcher,

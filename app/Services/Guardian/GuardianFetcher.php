@@ -8,15 +8,17 @@ use Illuminate\Support\Facades\Http;
 class GuardianFetcher implements FetcherInterface
 {
     protected string $apiKey;
+    protected string $apiUrl;
 
     public function __construct()
     {
         $this->apiKey = config('services.guardian.key');
+        $this->apiUrl = config('services.guardian.url');
     }
 
     public function fetch(array $params = []): mixed
     {
-        $response = Http::get('https://content.guardianapis.com/search', [
+        $response = Http::get($this->apiUrl, [
             'api-key' => $this->apiKey,
             'section' => data_get($params, 'category'),
             'page-size' => 50,
