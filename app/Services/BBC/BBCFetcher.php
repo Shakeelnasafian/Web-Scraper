@@ -3,13 +3,25 @@
 namespace App\Services\BBC;
 
 use App\Contracts\FetcherInterface;
+use Illuminate\Support\Facades\Http;
 
 class BBCFetcher implements FetcherInterface
 {
-    protected string $feedUrl = 'http://feeds.bbci.co.uk/news/rss.xml';
+    protected string $feedUrl;
+
+    public function __construct()
+    {
+        $this->feedUrl = config('services.bbc.url');
+    }
 
     public function fetch(array $params = []): ?\SimpleXMLElement
     {
-        return @simplexml_load_file($this->feedUrl, 'SimpleXMLElement', LIBXML_NOCDATA);
+        $response = Http::get($this->feedUrl);
+
+        if (!$response->successful()) {
+            return null;
+        }
+
+        return simplexml_load_string($response->body());
     }
 }
