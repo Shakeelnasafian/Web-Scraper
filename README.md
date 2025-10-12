@@ -1,61 +1,215 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Web Scraper Application
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A powerful web scraping application built with Laravel and Filament for managing and viewing scraped articles with advanced filtering and categorization features.
 
-## About Laravel
+## Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Article Management**: Create, read, update, delete articles with rich content support
+- **Advanced Filtering**: Filter articles by category, author, source, and status
+- **Article Duplication**: Easily duplicate existing articles with one click
+- **Live Preview**: View published articles directly from the admin panel
+- **Related Content**: Automatic related article suggestions by category, author, and source
+- **Status Management**: Draft, published, and archived article states
+- **Filament Admin Panel**: Modern, responsive admin interface
+- **Web Scraping**: Automated content collection from various sources
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Requirements
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP 8.1 or higher
+- Composer
+- MySQL 5.7+ or MariaDB 10.3+
+- Node.js & NPM
+- XAMPP/WAMP/LAMP or similar local development environment
 
-## Learning Laravel
+## Installation
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd webscraper
+   ```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+2. **Install PHP dependencies**
+   ```bash
+   composer install
+   ```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+3. **Install Node.js dependencies**
+   ```bash
+   npm install
+   ```
 
-## Laravel Sponsors
+4. **Environment Setup**
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+5. **Configure Database**
+   - Create a MySQL database named `webscraper`
+   - Update your `.env` file with database credentials:
+   ```
+   DB_CONNECTION=mysql
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_DATABASE=webscraper
+   DB_USERNAME=root
+   DB_PASSWORD=
+   ```
 
-### Premium Partners
+6. **Run Migrations**
+   ```bash
+   php artisan migrate
+   ```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+7. **Seed Database (Optional)**
+   ```bash
+   php artisan db:seed
+   ```
+
+8. **Create Admin User**
+   ```bash
+   php artisan make:filament-user
+   ```
+
+9. **Build Assets**
+   ```bash
+   npm run build
+   ```
+
+10. **Start Development Server**
+    ```bash
+    php artisan serve
+    ```
+
+## Usage
+
+### Accessing the Application
+
+- **Admin Panel**: Visit `http://localhost:8000/admin`
+- **Public Site**: Visit `http://localhost:8000`
+
+### Managing Articles
+
+1. **Creating Articles**
+   - Navigate to Articles in the admin panel
+   - Click "New Article"
+   - Fill in title, content, category, author, and source
+   - Set status (draft/published)
+
+2. **Viewing Articles**
+   - Click on any article to view details
+   - See related articles by category, author, and source
+   - Use "View Live" button for published articles
+
+3. **Duplicating Articles**
+   - In article view, click "Duplicate Article"
+   - Article will be copied with "Copy of" prefix
+   - Status automatically set to draft
+
+### Web Scraping
+
+Configure scraping sources in your `.env` file and use the built-in scraping commands:
+
+```bash
+php artisan scrape:articles
+```
+
+## Configuration
+
+### Environment Variables
+
+Key environment variables to configure:
+
+```env
+# Application
+APP_NAME="Web Scraper"
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://localhost:8000
+
+# Database
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=webscraper
+DB_USERNAME=root
+DB_PASSWORD=
+
+# Mail (for notifications)
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=
+MAIL_PASSWORD=
+MAIL_ENCRYPTION=tls
+
+# Scraping Settings
+SCRAPING_ENABLED=true
+SCRAPING_DELAY=2
+MAX_ARTICLES_PER_SOURCE=100
+```
+
+## File Structure
+
+```
+webscraper/
+├── app/
+│   ├── Filament/
+│   │   └── Resources/
+│   │       └── Articles/
+│   │           └── Pages/
+│   │               └── ViewArticle.php
+│   ├── Models/
+│   ├── Http/
+│   └── Console/
+├── database/
+│   ├── migrations/
+│   └── seeders/
+├── resources/
+│   ├── views/
+│   └── js/
+└── public/
+```
+
+## API Endpoints
+
+- `GET /api/articles` - List all published articles
+- `GET /api/articles/{slug}` - Get specific article
+- `GET /api/categories` - List all categories
+- `GET /api/sources` - List all sources
 
 ## Contributing
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
 
-## Code of Conduct
+## Troubleshooting
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Common Issues
 
-## Security Vulnerabilities
+1. **Permission Errors**
+   ```bash
+   chmod -R 775 storage/
+   chmod -R 775 bootstrap/cache/
+   ```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+2. **Database Connection Issues**
+   - Verify MySQL is running
+   - Check database credentials in `.env`
+   - Ensure database exists
+
+3. **Filament Issues**
+   ```bash
+   php artisan filament:install --panels
+   ```
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is licensed under the MIT License.
+
+## Support
+
+For support, please contact [your-email@example.com] or create an issue in the repository.
