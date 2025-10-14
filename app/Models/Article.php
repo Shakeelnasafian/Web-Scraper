@@ -2,27 +2,25 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Article extends Model
 {
     use HasFactory;
 
-    protected $table = 'articles';
-
     protected $fillable = [
-        'external_id',
-        'title',
-        'description',
-        'url',
         'source',
+        'title',
+        'url',
+        'description',
+        'content',
+        'url_to_image',
         'published_at',
+        'category',
     ];
 
     protected $casts = [
         'published_at' => 'datetime',
     ];
-
-    public $timestamps = true;
 }

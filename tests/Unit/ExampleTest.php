@@ -13,4 +13,24 @@ class ExampleTest extends TestCase
     {
         $this->assertTrue(true);
     }
+
+    /**
+     * Test basic PHP functionality.
+     */
+    public function test_array_operations(): void
+    {
+        $array = ['a', 'b', 'c'];
+        $this->assertCount(3, $array);
+        $this->assertContains('b', $array);
+    }
+
+    /**
+     * Test string operations.
+     */
+    public function test_string_operations(): void
+    {
+        $string = 'Web Scraper Application';
+        $this->assertStringContainsString('Scraper', $string);
+        $this->assertEquals(23, strlen($string));
+    }
 }
