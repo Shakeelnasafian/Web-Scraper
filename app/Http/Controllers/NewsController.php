@@ -2,76 +2,56 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Contracts\NewsSourceInterface;
 use App\Services\BBC\BBCNewsService;
-use App\Services\NewsApi\NewsApiService;
 use App\Services\Guardian\GuardianNewsService;
+use App\Services\NewsApi\NewsApiService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class NewsController extends Controller
 {
-    protected NewsApiService $newsApiService;
-    protected GuardianNewsService $guardianService;
-    protected BBCNewsService $bbcService;
+    public function __construct(
+        private NewsApiService $newsApiService,
+        private GuardianNewsService $guardianService,
+        private BBCNewsService $bbcService,
+    ) {}
 
-    public function __construct(NewsApiService $newsApiService, GuardianNewsService $guardianService, BBCNewsService $bbcService)
+    // GET /api/news - Fetch from NewsAPI
+    public function index(Request $request): JsonResponse
     {
-        $this->newsApiService = $newsApiService;
-        $this->guardianService = $guardianService;
-        $this->bbcService = $bbcService;
-    }
-
-    public function index(Request $request)
-    {
-        $params = [
+        return $this->fetchAndRespond($this->newsApiService, [
             'category' => $request->get('category', 'general'),
             'language' => $request->get('language', 'en'),
-        ];
-
-        $articles = $this->newsApiService->fetchArticles($params);
-        
-        $formatted = array_map(fn($dto) => $dto->toArray(), $articles);
-
-        if ($formatted) {
-            return response()->json($formatted);
-        }
-
-        return response()->json(['error' => 'Failed to fetch BBC news'], 500);
+        ], 'Failed to fetch NewsAPI articles');
     }
 
-    public function bbc(Request $request)
+    // GET /api/bbc - Fetch BBC News
+    public function bbc(Request $request): JsonResponse
     {
-        $params = [
-            'sources' => 'bbc-news',
+        return $this->fetchAndRespond($this->bbcService, [
             'language' => $request->get('language', 'en'),
-        ];
-
-        $articles = $this->bbcService->fetchArticles($params);
-
-        $formatted = array_map(fn($dto) => $dto->toArray(), $articles);
-
-        if ($formatted) {
-            return response()->json($formatted);
-        }
-
-        return response()->json(['error' => 'Failed to fetch BBC news'], 500);
+        ], 'Failed to fetch BBC news');
     }
 
-    public function guardian(Request $request)
+    // GET /api/guardian - Fetch Guardian News
+    public function guardian(Request $request): JsonResponse
     {
-        $params = [
-            'sources' => 'the-guardian-uk',
+        return $this->fetchAndRespond($this->guardianService, [
+            'category' => $request->get('category'),
             'language' => $request->get('language', 'en'),
-        ];
+        ], 'Failed to fetch Guardian news');
+    }
 
-        // Step 2. Fetch & normalize the data
-        $articles = $this->guardianService->fetchArticles($params);
-
+    private function fetchAndRespond(NewsSourceInterface $service, array $params, string $errorMessage): JsonResponse
+    {
+        $articles = $service->fetchArticles($params);
         $formatted = array_map(fn($dto) => $dto->toArray(), $articles);
 
         if ($formatted) {
             return response()->json($formatted);
         }
 
-        return response()->json(['error' => 'Failed to fetch Guardian news'], 500);
+        return response()->json(['error' => $errorMessage], 500);
     }
 }
