@@ -1,25 +1,42 @@
-# Web Scraper Application
+# Web Scraper — News Aggregator
 
-A powerful web scraping application built with Laravel and Filament for managing and viewing scraped articles with advanced filtering and categorization features.
+A Laravel 12 application that aggregates news articles from multiple sources (BBC, The Guardian, NewsAPI), normalises them into a unified format, stores them in a database, and exposes them via a REST API and a Filament admin panel.
 
 ## Features
 
-- **Article Management**: Create, read, update, delete articles with rich content support
-- **Advanced Filtering**: Filter articles by category, author, source, and status
-- **Article Duplication**: Easily duplicate existing articles with one click
-- **Live Preview**: View published articles directly from the admin panel
-- **Related Content**: Automatic related article suggestions by category, author, and source
-- **Status Management**: Draft, published, and archived article states
-- **Filament Admin Panel**: Modern, responsive admin interface
-- **Web Scraping**: Automated content collection from various sources
+- **Multi-source aggregation**: Pulls articles from BBC RSS, The Guardian API, and NewsAPI
+- **Unified data model**: All sources are normalised to a single `ArticleDTO` / `Article` format
+- **Queue-based fetching**: Articles are fetched via `FetchArticlesJob` for non-blocking background processing
+- **REST API**: Three dedicated endpoints to query each news source on demand
+- **Filament Admin Panel**: Modern, responsive admin interface for browsing and managing articles
+- **Artisan command**: `news:fetch-all` dispatches fetch jobs for all sources at once
+
+## Architecture
+
+```
+Request / Artisan command
+        │
+        ▼
+NewsController  ──────────────────────────────┐
+        │                                     │
+        ▼                                     ▼
+AbstractNewsService (fetch → parse → normalise)
+        │
+   ┌────┴──────────────┐
+   │                   │
+Fetcher            Parser → Normalizer
+(HTTP/RSS)         (raw → []  → ArticleDTO)
+```
+
+Each news source has its own `Fetcher`, `Parser`, and `Normalizer` class, all bound by shared interfaces (`FetcherInterface`, `ParserInterface`, `NormalizerInterface`).
 
 ## Requirements
 
-- PHP 8.1 or higher
+- PHP 8.2 or higher
 - Composer
 - MySQL 5.7+ or MariaDB 10.3+
 - Node.js & NPM
-- XAMPP/WAMP/LAMP or similar local development environment
+- A queue worker (database, Redis, etc.) for background jobs
 
 ## Installation
 
@@ -39,16 +56,14 @@ A powerful web scraping application built with Laravel and Filament for managing
    npm install
    ```
 
-4. **Environment Setup**
+4. **Environment setup**
    ```bash
    cp .env.example .env
    php artisan key:generate
    ```
 
-5. **Configure Database**
-   - Create a MySQL database named `webscraper`
-   - Update your `.env` file with database credentials:
-   ```
+5. **Configure the database** — update `.env`:
+   ```env
    DB_CONNECTION=mysql
    DB_HOST=127.0.0.1
    DB_PORT=3306
@@ -57,159 +72,152 @@ A powerful web scraping application built with Laravel and Filament for managing
    DB_PASSWORD=
    ```
 
-6. **Run Migrations**
+6. **Configure news API keys** — update `.env`:
+   ```env
+   NEWS_API_KEY=your_newsapi_key
+   NEWS_API_URL=https://newsapi.org/v2/top-headlines
+
+   GUARDIAN_API_KEY=your_guardian_key
+   GUARDIAN_API_URL=https://content.guardianapis.com/search
+
+   BBC_API_URL=https://feeds.bbci.co.uk/news/rss.xml
+   ```
+
+7. **Run migrations**
    ```bash
    php artisan migrate
    ```
 
-7. **Seed Database (Optional)**
-   ```bash
-   php artisan db:seed
-   ```
-
-8. **Create Admin User**
+8. **Create an admin user**
    ```bash
    php artisan make:filament-user
    ```
 
-9. **Build Assets**
+9. **Build assets**
    ```bash
    npm run build
    ```
 
-10. **Start Development Server**
+10. **Start the development server**
     ```bash
     php artisan serve
     ```
 
+11. **Start a queue worker** (required for background fetching)
+    ```bash
+    php artisan queue:work
+    ```
+
 ## Usage
 
-### Accessing the Application
+### Admin Panel
 
-- **Admin Panel**: Visit `http://localhost:8000/admin`
-- **Public Site**: Visit `http://localhost:8000`
+Visit `http://localhost:8000/admin` to browse and manage articles.
 
-### Managing Articles
+### Fetching News
 
-1. **Creating Articles**
-   - Navigate to Articles in the admin panel
-   - Click "New Article"
-   - Fill in title, content, category, author, and source
-   - Set status (draft/published)
-
-2. **Viewing Articles**
-   - Click on any article to view details
-   - See related articles by category, author, and source
-   - Use "View Live" button for published articles
-
-3. **Duplicating Articles**
-   - In article view, click "Duplicate Article"
-   - Article will be copied with "Copy of" prefix
-   - Status automatically set to draft
-
-### Web Scraping
-
-Configure scraping sources in your `.env` file and use the built-in scraping commands:
+Dispatch background jobs for all sources at once:
 
 ```bash
-php artisan scrape:articles
+php artisan news:fetch-all
 ```
 
-## Configuration
+This dispatches a `FetchArticlesJob` for each of the three sources (`bbc`, `guardian`, `newsapi`). Articles are upserted by URL so duplicates are handled automatically.
 
-### Environment Variables
+### API Endpoints
 
-Key environment variables to configure:
+| Method | Endpoint | Source | Query params |
+|--------|----------|--------|--------------|
+| GET | `/api/news` | NewsAPI | `category`, `language` |
+| GET | `/api/bbc` | BBC RSS | `language` |
+| GET | `/api/guardian` | The Guardian | `category`, `language` |
 
-```env
-# Application
-APP_NAME="Web Scraper"
-APP_ENV=local
-APP_DEBUG=true
-APP_URL=http://localhost:8000
-
-# Database
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=webscraper
-DB_USERNAME=root
-DB_PASSWORD=
-
-# Mail (for notifications)
-MAIL_MAILER=smtp
-MAIL_HOST=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USERNAME=
-MAIL_PASSWORD=
-MAIL_ENCRYPTION=tls
-
-# Scraping Settings
-SCRAPING_ENABLED=true
-SCRAPING_DELAY=2
-MAX_ARTICLES_PER_SOURCE=100
+**Example response item:**
+```json
+{
+  "source": "BBC News",
+  "author": null,
+  "title": "Article headline",
+  "description": "Short summary",
+  "content": "Full article text...",
+  "url": "https://www.bbc.co.uk/news/...",
+  "url_to_image": null,
+  "published_at": "2026-03-24 10:00:00",
+  "category": "general"
+}
 ```
+
+Returns `500` with `{"error": "..."}` if the upstream source fails.
 
 ## File Structure
 
 ```
-webscraper/
-├── app/
-│   ├── Filament/
-│   │   └── Resources/
-│   │       └── Articles/
-│   │           └── Pages/
-│   │               └── ViewArticle.php
-│   ├── Models/
-│   ├── Http/
-│   └── Console/
-├── database/
-│   ├── migrations/
-│   └── seeders/
-├── resources/
-│   ├── views/
-│   └── js/
-└── public/
+app/
+├── Actions/
+│   └── StoreOrUpdateArticleAction.php   # Upserts ArticleDTOs into the DB
+├── Console/Commands/
+│   └── FetchAllNews.php                 # php artisan news:fetch-all
+├── Contracts/
+│   ├── ContentFetcherInterface.php
+│   ├── FetcherInterface.php
+│   ├── NormalizerInterface.php
+│   ├── NewsSourceInterface.php
+│   └── ParserInterface.php
+├── DTOs/
+│   └── ArticleDTO.php                   # Shared normalised article shape
+├── Factories/
+│   └── NewsServiceFactory.php           # Resolves service by name string
+├── Filament/                            # Admin panel resources
+├── Http/Controllers/
+│   └── NewsController.php              # REST API (index / bbc / guardian)
+├── Jobs/
+│   └── FetchArticlesJob.php            # Queueable fetch job
+├── Models/
+│   ├── Article.php
+│   ├── Category.php
+│   └── User.php
+└── Services/
+    ├── AbstractNewsService.php          # Shared fetch → parse → normalise pipeline
+    ├── BBC/
+    │   ├── BBCNewsService.php
+    │   ├── BBCFetcher.php
+    │   ├── BBCParser.php
+    │   ├── BBCNormalizer.php
+    │   └── BBCContentFetcher.php        # Fetches full article body via DOM
+    ├── Guardian/
+    │   ├── GuardianNewsService.php
+    │   ├── GuardianFetcher.php
+    │   ├── GuardianParser.php
+    │   └── GuardianNormalizer.php
+    └── NewsApi/
+        ├── NewsApiService.php
+        ├── NewsApiFetcher.php
+        ├── NewsApiParser.php
+        └── NewsApiNormalizer.php
 ```
-
-## API Endpoints
-
-- `GET /api/articles` - List all published articles
-- `GET /api/articles/{slug}` - Get specific article
-- `GET /api/categories` - List all categories
-- `GET /api/sources` - List all sources
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
 
 ## Troubleshooting
 
-### Common Issues
+**Permission errors**
+```bash
+chmod -R 775 storage/ bootstrap/cache/
+```
 
-1. **Permission Errors**
-   ```bash
-   chmod -R 775 storage/
-   chmod -R 775 bootstrap/cache/
-   ```
+**Database connection issues**
+- Confirm MySQL is running
+- Double-check credentials in `.env`
+- Ensure the database exists
 
-2. **Database Connection Issues**
-   - Verify MySQL is running
-   - Check database credentials in `.env`
-   - Ensure database exists
+**Articles not being stored**
+- Confirm a queue worker is running (`php artisan queue:work`)
+- Check `storage/logs/laravel.log` for errors from `FetchArticlesJob`
 
-3. **Filament Issues**
-   ```bash
-   php artisan filament:install --panels
-   ```
+**Filament panel not loading**
+```bash
+php artisan filament:install --panels
+php artisan optimize:clear
+```
 
 ## License
 
-This project is licensed under the MIT License.
-
-## Support
-
-For support, please contact [your-email@example.com] or create an issue in the repository.
+MIT
